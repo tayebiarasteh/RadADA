@@ -1,0 +1,15 @@
+name: radada
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11
+  - matplotlib 
+  - tqdm
+  - pandas
+  - scikit-learn
+  - jupyter
+  - pip
+  - pip:
+    - numpy
+
