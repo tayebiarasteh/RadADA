@@ -8,6 +8,8 @@ https://github.com/tayebiarasteh/
 """
 import pandas as pd
 import numpy as np
+from scipy.stats import mode
+from tqdm import tqdm
 
 # Function to categorize age into intervals
 def categorize_age(age):
@@ -26,9 +28,22 @@ def categorize_age(age):
     else:
         return "80-112"
 
+
+# Function to perform majority vote
+def majority_vote(values):
+    # Count the occurrences of each value
+    counts = values.value_counts()
+    # Find the most frequent value
+    max_count = counts.max()
+    # Filter values that have the max count
+    most_frequent = counts[counts == max_count]
+    # Return the first one in case of tie
+    return most_frequent.index[0]
+
+
 def main():
     # Load the dataset
-    file_path = '/PATH/original_UKA_master_list.csv'  # Replace with your file path
+    file_path = '/PATH.csv'  # Replace with your file path
     data = pd.read_csv(file_path)
 
     # Modify the 'age' column
@@ -103,15 +118,60 @@ def main():
     data['image_id'] = new_image_ids
 
     # Sort the dataset by 'Exam Date', 'patient_id', and then by 'Exam Time'
-    data = data.sort_values(by=['Exam Date', 'Patient ID', 'Exam Time'])
+    df = data.sort_values(by=['Exam Date', 'Patient ID', 'Exam Time'])
 
-    # Save the modified dataset
-    modified_file_path = '/PATH/resssss.csv'  # Define your desired file path
-    data.to_csv(modified_file_path, index=False)
+    # Columns for majority vote
+    vote_cols = ['Cardiomegaly', 'Congestion', 'Pleural Effusion (r)', 'Pleural Effusion (l)',
+                 'Pulmonary Opacities (r)', 'Pulmonary Opacities (l)', 'Atelectasis (r)', 'Atelectasis (l)']
+
+    # Columns for mean calculation
+    mean_cols = ['Leukocyte Count [x 10^9 / l]', 'Procalcitonin [ng/ml]', 'C-Reactive Protein [mg/l]']
+
+    # Processing the data
+    grouped = df.groupby(df['Patient ID'])
+
+    # Majority vote for specified columns
+    for col in tqdm(vote_cols):
+        df[col] = grouped[col].transform(lambda x: majority_vote(x))
+
+    # Mean for lab values columns
+    for col in mean_cols:
+        df[col] = grouped[col].transform(lambda x: x.mean() if not x.isna().all() else None)
+
+    # Keeping only one row per patient
+    df = df.drop_duplicates(subset=['Patient ID'])
+
+    # Saving to Excel
+    output_file = '/PATH.xlsx'  # Define your desired file path
+    df.to_excel(output_file, index=False)
+
+    print(f"Processed dataset saved to {output_file}")
+
+
+
+def sort_dataset(file_path):
+    # Read the dataset
+    df = pd.read_excel(file_path)
+
+    # Convert 'Exam Date' to datetime format (assuming the format is MM/YYYY)
+    df['Exam Date'] = pd.to_datetime(df['Exam Date'], format='%m/%Y')
+
+    # Sort the dataframe by 'Exam Date'
+    sorted_df = df.sort_values(by='Exam Date')
+
+    # Revert 'Exam Date' back to month/year format
+    sorted_df['Exam Date'] = sorted_df['Exam Date'].dt.strftime('%m/%Y')
+
+    # Save the sorted dataframe to a new Excel file
+    sorted_output_file = '/PATH.xlsx'
+    sorted_df.to_excel(sorted_output_file, index=False)
+
+    print(f"Sorted dataset saved to {sorted_output_file}")
 
 
 if __name__ == "__main__":
-    main()
-    data_df = pd.read_csv('/PATH/resssss.csv')
-    modified_file_path = '/PATH/CXR LabValues Aachen.xlsx'  # Define your desired file path
-    data_df.to_excel(modified_file_path, index=False)
+    # main()
+    # data_df = pd.read_csv('/PATH/resssss.csv')
+
+    new_dataset_path = '/PATH.xlsx'  # Define your desired file path
+    sort_dataset(new_dataset_path)
