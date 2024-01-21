@@ -120,9 +120,9 @@ def main():
     # Sort the dataset by 'Exam Date', 'patient_id', and then by 'Exam Time'
     df = data.sort_values(by=['Exam Date', 'Patient ID', 'Exam Time'])
 
-    # Columns for majority vote
-    vote_cols = ['Cardiomegaly', 'Congestion', 'Pleural Effusion (r)', 'Pleural Effusion (l)',
-                 'Pulmonary Opacities (r)', 'Pulmonary Opacities (l)', 'Atelectasis (r)', 'Atelectasis (l)']
+    # # Columns for majority vote
+    # vote_cols = ['Cardiomegaly', 'Congestion', 'Pleural Effusion (r)', 'Pleural Effusion (l)',
+    #              'Pulmonary Opacities (r)', 'Pulmonary Opacities (l)', 'Atelectasis (r)', 'Atelectasis (l)']
 
     # Columns for mean calculation
     mean_cols = ['Leukocyte Count [x 10^9 / l]', 'Procalcitonin [ng/ml]', 'C-Reactive Protein [mg/l]']
@@ -130,9 +130,9 @@ def main():
     # Processing the data
     grouped = df.groupby(df['Patient ID'])
 
-    # Majority vote for specified columns
-    for col in tqdm(vote_cols):
-        df[col] = grouped[col].transform(lambda x: majority_vote(x))
+    # # Majority vote for specified columns
+    # for col in tqdm(vote_cols):
+    #     df[col] = grouped[col].transform(lambda x: majority_vote(x))
 
     # Mean for lab values columns
     for col in mean_cols:
@@ -141,9 +141,33 @@ def main():
     # Keeping only one row per patient
     df = df.drop_duplicates(subset=['Patient ID'])
 
+    # Convert 'Exam Date' to datetime format (assuming the format is MM/YYYY)
+    df['Exam Date'] = pd.to_datetime(df['Exam Date'], format='%m/%Y')
+
+    # Sort the dataframe by 'Exam Date'
+    sorted_df = df.sort_values(by='Exam Date')
+
+    # Revert 'Exam Date' back to month/year format
+    sorted_df['Exam Date'] = sorted_df['Exam Date'].dt.strftime('%m/%Y')
+
+    # Dropping the column 'dignosis_physician_Name' from the cleaned dataset
+    sorted_df = sorted_df.drop(columns=['dignosis_physician_Name', 'image_id', 'Image ID', 'reception_id'])
+
+    # Reordering the columns to bring 'cardiomegaly' to the 3rd position
+    columns = list(sorted_df.columns)
+    columns.insert(2, columns.pop(columns.index('Patient Sex')))
+    # Reassigning the DataFrame with new column order
+    sorted_df = sorted_df[columns]
+
+    # Reordering the columns to bring 'cardiomegaly' to the 3rd position
+    columns = list(sorted_df.columns)
+    columns.insert(5, columns.pop(columns.index('Reporting Radiologist')))
+    # Reassigning the DataFrame with new column order
+    sorted_df = sorted_df[columns]
+
     # Saving to Excel
     output_file = '/PATH.xlsx'  # Define your desired file path
-    df.to_excel(output_file, index=False)
+    sorted_df.to_excel(output_file, index=False)
 
     print(f"Processed dataset saved to {output_file}")
 
@@ -169,9 +193,10 @@ def sort_dataset(file_path):
     print(f"Sorted dataset saved to {sorted_output_file}")
 
 
+
 if __name__ == "__main__":
-    # main()
+    main()
     # data_df = pd.read_csv('/PATH/resssss.csv')
 
-    new_dataset_path = '/PATH.xlsx'  # Define your desired file path
-    sort_dataset(new_dataset_path)
+    # new_dataset_path = '/PATH.xlsx'  # Define your desired file path
+    # sort_dataset(new_dataset_path)
