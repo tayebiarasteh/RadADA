@@ -3,8 +3,11 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.11
+  - python=3.8
   - matplotlib 
+  - omegaconf
+  - fvcore
+  - iopath
   - tqdm
   - pandas
   - scikit-learn
@@ -12,4 +15,8 @@ dependencies:
   - pip
   - pip:
     - numpy
+    - mne
+    - seaborn
+    - openpyxl
+    - lightgbm
 
