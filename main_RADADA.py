@@ -25,6 +25,10 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+
 
 
 import warnings
@@ -338,9 +342,140 @@ class Validation():
 
 
 
+class Tasks():
+    def __int__(self):
+        pass
+
+    def task1(self):
+        # Load the dataset
+        file_path = '/mnt/data/CXR LabValues Aachen.xlsx'
+        data = pd.read_excel(file_path)
+
+        # Display the first few rows of the dataset to understand its structure
+        data.head()
+
+        # Extracting year from the 'Exam Date' column
+        data['Year'] = pd.to_datetime(data['Exam Date'], errors='coerce').dt.year
+
+        # Counting the number of exams per year
+        utilization_per_year = data['Year'].value_counts().sort_index()
+
+        # Plotting the data
+        plt.figure(figsize=(12, 6))
+        sns.barplot(x=utilization_per_year.index, y=utilization_per_year.values, palette="viridis")
+        plt.title('Radiologic Exams Utilization Rates by Year', fontsize=18)
+        plt.xlabel('Year', fontsize=14)
+        plt.ylabel('Number of Exams', fontsize=14)
+        plt.xticks(rotation=45)
+        plt.grid(axis='y')
+
+        # Save the plot as a high-quality PNG file
+        output_file_path = '/mnt/data/radiologic_exams_utilization_rates.png'
+        plt.savefig(output_file_path, format='png', dpi=300)
+
+
+    def task2(self):
+        # Load the dataset
+        file_path = '/mnt/data/CXR LabValues Aachen.xlsx'
+        data = pd.read_excel(file_path)
+
+        # Display the first few rows of the dataset to understand its structure
+        data.head()
+
+        # Mapping severity levels to numerical values
+        severity_map = {'None': 0, '+': 1, '++': 2, '+++': 3}
+
+        # Applying the mapping and considering the higher severity between the two sides
+        data['Pulmonary Opacities Severity'] = data[['Pulmonary Opacities (r)', 'Pulmonary Opacities (l)']].replace(
+            severity_map).max(axis=1)
+
+        # Filtering out the questionable labels
+        data_filtered = data[data['Pulmonary Opacities Severity'].notna()]
+
+        # Calculating the mean severity for each combination of age interval and sex
+        mean_severity = data_filtered.groupby(['Patient Age Interval', 'Patient Sex'])[
+            'Pulmonary Opacities Severity'].mean().unstack()
+
+        mean_severity.reset_index(inplace=True)
+
+
+    # Function to convert image finding values to binary
+    def convert_to_binary(self, val):
+        if val in ["None", "(+)"]:
+            return 0
+        elif val in ["+", "++", "+++"]:
+            return 1
+        else:
+            return np.nan
+
+    def task3(self):
+        # Load the dataset
+        file_path = '/mnt/data/CXR LabValues Aachen.xlsx'
+        df = pd.read_excel(file_path)
+
+        # Display the first few rows of the dataframe to understand its structure
+        df.head()
+
+        # Apply the binary conversion to relevant columns
+        image_finding_cols = ['Cardiomegaly', 'Congestion', 'Pleural Effusion (r)',
+                              'Pleural Effusion (l)', 'Pulmonary Opacities (r)',
+                              'Pulmonary Opacities (l)', 'Atelectasis (r)', 'Atelectasis (l)']
+
+        for col in image_finding_cols:
+            df[col] = df[col].apply(self.convert_to_binary)
+
+        # Combining pulmonary opacities into one entity
+        df['Pulmonary Opacities'] = df[['Pulmonary Opacities (r)', 'Pulmonary Opacities (l)']].max(axis=1)
+
+        # Drop the individual pulmonary opacity columns
+        df.drop(['Pulmonary Opacities (r)', 'Pulmonary Opacities (l)'], axis=1, inplace=True)
+
+        # Handle missing values
+        # For simplicity, filling missing values with the median for numerical columns and mode for categorical columns
+        for col in df.columns:
+            if df[col].dtype == 'object':
+                df[col].fillna(df[col].mode()[0], inplace=True)
+            else:
+                df[col].fillna(df[col].median(), inplace=True)
+
+        # Encoding categorical variables
+        label_encoder = LabelEncoder()
+        df['Patient Age Interval'] = label_encoder.fit_transform(df['Patient Age Interval'])
+        df['Patient Sex'] = label_encoder.fit_transform(df['Patient Sex'])
+        df['Reporting Radiologist'] = label_encoder.fit_transform(df['Reporting Radiologist'])
+
+        # Selecting features for the analysis
+        features = df.drop(['Patient ID', 'Exam Date', 'Exam Time', 'Pulmonary Opacities'], axis=1)
+        target = df['Pulmonary Opacities']
+
+        # Logistic regression model
+        model = sm.Logit(target, sm.add_constant(features)).fit()
+
+        # Summary of the model
+        model_summary = model.summary2()
+
+        # Extracting relevant information from the model summary
+        results = model_summary.tables[1].reset_index()
+        results.columns = ['Variable', 'Coefficient', 'Std. Error', 'z', 'P-value', 'CI Lower', 'CI Upper']
+
+        # Sorting the results based on the absolute value of the coefficient to show the influence
+        results['Abs Coefficient'] = results['Coefficient'].abs()
+        sorted_results = results.sort_values(by='Abs Coefficient', ascending=False).drop('Abs Coefficient', axis=1)
+
+        sorted_results.reset_index(drop=True)
+
+
+
+
+
 
 if __name__ == '__main__':
     cohort = Validation()
-
     # cohort.main_train_GPT_ADA()
     cohort.main_train_datascientist()
+
+    taskss = Tasks()
+    taskss.task1()
+    taskss.task2()
+    taskss.task3()
+    taskss.task4()
