@@ -9,25 +9,21 @@ https://github.com/tayebiarasteh/
 import pdb
 import os
 import numpy as np
-from sklearn import metrics
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier, RandomForestClassifier
-from sklearn.metrics import roc_auc_score, f1_score, accuracy_score, confusion_matrix
+from sklearn.metrics import roc_auc_score, accuracy_score, confusion_matrix, classification_report
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, StratifiedKFold, cross_val_score
-from scipy.stats import norm
-import lightgbm as lgb
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, StratifiedKFold, cross_val_score, train_test_split
 from sklearn.svm import SVC
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, LabelEncoder, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
+from scipy.stats import norm
+import lightgbm as lgb
 
 
 
@@ -465,6 +461,104 @@ class Tasks():
         sorted_results.reset_index(drop=True)
 
 
+    def task4(self):
+        todo
+
+
+
+
+
+
+class Autonomous():
+    def __int__(self):
+        pass
+
+    def statistics(self):
+        # Load the dataset
+        file_path = '/mnt/data/CXR LabValues Aachen.xlsx'
+        data = pd.read_excel(file_path)
+
+        # Display the first few rows of the dataset for an initial overview
+        data.head()
+
+        # Descriptive statistics for the continuous variables (lab values)
+        lab_values_stats = data.describe()
+
+        # Distribution of demographics: Patient Age Interval, Patient Sex
+        age_distribution = data['Patient Age Interval'].value_counts()
+        sex_distribution = data['Patient Sex'].value_counts()
+
+        lab_values_stats, age_distribution, sex_distribution
+
+        # Analysis of the frequency and distribution of various imaging findings and their severity
+        imaging_columns = ['Cardiomegaly', 'Congestion', 'Pleural Effusion (r)', 'Pleural Effusion (l)',
+                           'Pulmonary Opacities (r)', 'Pulmonary Opacities (l)', 'Atelectasis (r)', 'Atelectasis (l)']
+
+        # Count the frequency of each severity level for each imaging finding
+        imaging_findings_distribution = {col: data[col].value_counts() for col in imaging_columns}
+
+        imaging_findings_distribution
+
+
+
+    def correlationanalysis(self):
+        # For the purpose of correlation analysis, we need to convert the categorical severity levels into numerical values
+        # Mapping: 'None': 0, '(+)': 1, '+': 2, '++': 3, '+++': 4
+        severity_mapping = {'None': 0, '(+)': 1, '+': 2, '++': 3, '+++': 4}
+
+        # Apply this mapping to the imaging columns
+        for col in imaging_columns:
+            data[col] = data[col].map(severity_mapping)
+
+        # Now, let's calculate the correlation matrix
+        corr_matrix = data.corr()
+
+        # Plotting the correlation matrix using seaborn heatmap
+        plt.figure(figsize=(12, 8))
+        sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
+        plt.title("Correlation Matrix of Imaging Findings and Lab Values")
+        plt.show()
+
+
+
+    def predictive_modeling(self):
+        # Selecting features - Demographics and lab values
+        features = ['Patient Age Interval', 'Patient Sex', 'Leukocyte Count [x 10^9 / l]', 'Procalcitonin [ng/ml]',
+                    'C-Reactive Protein [mg/l]']
+
+        # Data Preprocessing
+        # Handling missing values - using mean for continuous variables
+        imputer = SimpleImputer(strategy='mean')
+        data[features[2:]] = imputer.fit_transform(data[features[2:]])
+
+        # Encoding categorical variables
+        data = pd.get_dummies(data, columns=['Patient Age Interval', 'Patient Sex'], drop_first=True)
+
+        # Update features list to include the new dummy variables
+        features = list(set(data.columns) - set(imaging_columns) - {'Patient ID', 'Exam Date', 'Exam Time',
+                                                                    'Reporting Radiologist'})
+
+        # Splitting the dataset into training and testing sets
+        X_train, X_test, y_train, y_test = train_test_split(data[features], data[target], test_size=0.3,
+                                                            random_state=42)
+
+        # Normalizing the feature data
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+
+        # Model Building
+        model = RandomForestClassifier(random_state=42)
+        model.fit(X_train, y_train)
+
+        # Predicting on the test set
+        y_pred = model.predict(X_test)
+
+        # Model Evaluation
+        classification_report_data = classification_report(y_test, y_pred, output_dict=True)
+
+        classification_report_data
+
 
 
 
@@ -479,3 +573,8 @@ if __name__ == '__main__':
     taskss.task2()
     taskss.task3()
     taskss.task4()
+
+    autonomous = Autonomous()
+    autonomous.statistics()
+    autonomous.correlationanalysis()
+    autonomous.predictive_modeling()
