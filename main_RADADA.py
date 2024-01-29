@@ -24,6 +24,8 @@ import seaborn as sns
 import statsmodels.api as sm
 from scipy.stats import norm
 import lightgbm as lgb
+from matplotlib.ticker import MaxNLocator
+
 
 
 
@@ -350,24 +352,56 @@ class Tasks():
         # Display the first few rows of the dataset to understand its structure
         data.head()
 
-        # Extracting year from the 'Exam Date' column
-        data['Year'] = pd.to_datetime(data['Exam Date'], errors='coerce').dt.year
+        # Extracting year from 'Exam Date' and converting it to integer
+        data['Year'] = pd.to_datetime(data['Exam Date'], format='%m/%Y').dt.year
 
-        # Counting the number of exams per year
-        utilization_per_year = data['Year'].value_counts().sort_index()
+        # Plotting Utilization Rates as a Function of Years
+        utilization_rate = data.groupby('Year').size()
 
-        # Plotting the data
         plt.figure(figsize=(12, 6))
-        sns.barplot(x=utilization_per_year.index, y=utilization_per_year.values, palette="viridis")
-        plt.title('Radiologic Exams Utilization Rates by Year', fontsize=18)
-        plt.xlabel('Year', fontsize=14)
-        plt.ylabel('Number of Exams', fontsize=14)
-        plt.xticks(rotation=45)
-        plt.grid(axis='y')
+        sns.barplot(x=utilization_rate.index, y=utilization_rate.values, palette="viridis")
+        plt.title('Utilization Rates by Year', fontsize=20)
+        plt.xlabel('Year', fontsize=16)
+        plt.ylabel('Number of Exams', fontsize=16)
+        plt.xticks(fontsize=14)
+        plt.yticks(fontsize=14)
+        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.tight_layout()
 
-        # Save the plot as a high-quality PNG file
-        output_file_path = '/mnt/data/radiologic_exams_utilization_rates.png'
-        plt.savefig(output_file_path, format='png', dpi=300)
+        # Saving the plot
+        utilization_rate_plot_path = '/mnt/data/utilization_rates_by_year.png'
+        plt.savefig(utilization_rate_plot_path)
+        plt.close()
+
+        # Plotting Lab Value Distributions
+        lab_values = ['Leukocyte Count [x 10^9 / l]', 'Procalcitonin [ng/ml]', 'C-Reactive Protein [mg/l]']
+        n_lab_values = len(lab_values)
+
+        plt.figure(figsize=(18, 6 * n_lab_values))
+        for i, lab_value in enumerate(lab_values, 1):
+            plt.subplot(n_lab_values, 1, i)
+            sns.histplot(data[lab_value].dropna(), kde=True, color='skyblue', bins=30)
+            plt.title(f'Distribution of {lab_value}', fontsize=20)
+            plt.xlabel(f'{lab_value}', fontsize=16)
+            plt.ylabel('Frequency', fontsize=16)
+            plt.xticks(fontsize=14)
+            plt.yticks(fontsize=14)
+            plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        plt.tight_layout()
+
+        # Saving the plot
+        lab_values_plot_path = '/mnt/data/lab_value_distributions.png'
+        plt.savefig(lab_values_plot_path)
+        plt.close()
+
+        utilization_rate_plot_path, lab_values_plot_path
+
+
+    def severity_to_numeric(self, severity):
+        severity_map = {"None": 0, "+": 1, "++": 2, "+++": 3}
+        return severity_map.get(severity, None)  # Returns None for "(+)" and other unexpected values
 
 
     def task2(self):
@@ -378,21 +412,25 @@ class Tasks():
         # Display the first few rows of the dataset to understand its structure
         data.head()
 
-        # Mapping severity levels to numerical values
-        severity_map = {'None': 0, '+': 1, '++': 2, '+++': 3}
+        # First, we'll create a function to assign numerical values to the severity levels
+        # "None": 0, "(+)": Disregard, "+": 1, "++": 2, "+++": 3
 
-        # Applying the mapping and considering the higher severity between the two sides
-        data['Pulmonary Opacities Severity'] = data[['Pulmonary Opacities (r)', 'Pulmonary Opacities (l)']].replace(
-            severity_map).max(axis=1)
+        # Apply this function to the Pulmonary Opacities columns
+        data['Pulmonary Opacities (r) Numeric'] = data['Pulmonary Opacities (r)'].apply(self.severity_to_numeric)
+        data['Pulmonary Opacities (l) Numeric'] = data['Pulmonary Opacities (l)'].apply(self.severity_to_numeric)
 
-        # Filtering out the questionable labels
-        data_filtered = data[data['Pulmonary Opacities Severity'].notna()]
+        # Combine the right and left opacities into a single measure
+        # If either side is present, consider it as global presence
+        data['Pulmonary Opacities Combined'] = data[
+            ['Pulmonary Opacities (r) Numeric', 'Pulmonary Opacities (l) Numeric']].max(axis=1)
 
-        # Calculating the mean severity for each combination of age interval and sex
-        mean_severity = data_filtered.groupby(['Patient Age Interval', 'Patient Sex'])[
-            'Pulmonary Opacities Severity'].mean().unstack()
+        # Now, calculate the mean severity of pulmonary opacities as a function of age and sex
+        mean_severity_table = data.groupby(['Patient Age Interval', 'Patient Sex'])[
+            'Pulmonary Opacities Combined'].mean().unstack()
 
-        mean_severity.reset_index(inplace=True)
+        mean_severity_table
+
+
 
 
     # Function to convert image finding values to binary
@@ -403,6 +441,8 @@ class Tasks():
             return 1
         else:
             return np.nan
+
+
 
     def task3(self):
         # Load the dataset
