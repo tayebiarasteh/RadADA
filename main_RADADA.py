@@ -501,11 +501,108 @@ class Tasks():
         sorted_results.reset_index(drop=True)
 
 
+
+    # Function to calculate sensitivity and specificity
+    def calculate_sensitivity_specificity(self, y_true, y_pred):
+        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+        sensitivity = tp / (tp + fn)
+        specificity = tn / (tn + fp)
+        return sensitivity, specificity
+
+
+
     def task4(self):
-        todo
+        # Load the dataset
+        file_path = '/mnt/data/CXR LabValues Aachen.xlsx'
+        data = pd.read_excel(file_path)
+
+        # Display the first few rows of the dataset to understand its structure
+        data.head()
+
+        # Data Cleaning and Preprocessing
+
+        # Converting categorical variables into numerical format
+        label_encoder = LabelEncoder()
+        categorical_columns = ['Patient Age Interval', 'Patient Sex', 'Cardiomegaly',
+                               'Congestion', 'Pleural Effusion (r)', 'Pleural Effusion (l)',
+                               'Pulmonary Opacities (r)', 'Pulmonary Opacities (l)',
+                               'Atelectasis (r)', 'Atelectasis (l)']
+
+        for col in categorical_columns:
+            data[col] = label_encoder.fit_transform(data[col].astype(str))
+
+        # Convert the labels for Pulmonary Opacities into binary format
+        # 'None' as 0 (negative) and '+', '++', '+++' as 1 (positive)
+        opacities_columns = ['Pulmonary Opacities (r)', 'Pulmonary Opacities (l)']
+        for col in opacities_columns:
+            data[col] = data[col].apply(lambda x: 0 if x == label_encoder.transform(['None'])[0] else 1)
+
+        # Handling missing values
+        data.fillna(data.mean(), inplace=True)
+
+        # Splitting data into features and target
+        target = data[['Pulmonary Opacities (r)', 'Pulmonary Opacities (l)']].max(axis=1)
+        features = data.drop(['Patient ID', 'Exam Date', 'Exam Time', 'Reporting Radiologist',
+                              'Pulmonary Opacities (r)', 'Pulmonary Opacities (l)'], axis=1)
+
+        # Splitting data into training and testing sets
+        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+
+        # Saving the train/test split IDs for download
+        train_ids = data.loc[X_train.index, 'Patient ID']
+        test_ids = data.loc[X_test.index, 'Patient ID']
+        train_test_ids = pd.DataFrame({'Train_IDs': train_ids, 'Test_IDs': test_ids})
+        train_test_ids.to_csv('/mnt/data/train_test_ids.csv', index=False)
+
+        train_test_ids.head(), X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
 
+        # Model 1: Using all available variables
+        model1 = RandomForestClassifier(random_state=42)
+        model1.fit(X_train, y_train)
 
+        # Predictions and probabilities
+        y_pred1 = model1.predict(X_test)
+        y_proba1 = model1.predict_proba(X_test)[:, 1]
+
+        # Evaluation Metrics
+        auroc1 = roc_auc_score(y_test, y_proba1)
+        accuracy1 = accuracy_score(y_test, y_pred1)
+        sensitivity1, specificity1 = self.calculate_sensitivity_specificity(y_test, y_pred1)
+
+        # Model 2: Excluding CRP, Leukocyte counts, and Procalcitonin
+        excluded_features = ['Leukocyte Count [x 10^9 / l]', 'Procalcitonin [ng/ml]', 'C-Reactive Protein [mg/l]']
+        X_train_2 = X_train.drop(excluded_features, axis=1)
+        X_test_2 = X_test.drop(excluded_features, axis=1)
+
+        model2 = RandomForestClassifier(random_state=42)
+        model2.fit(X_train_2, y_train)
+
+        # Predictions and probabilities
+        y_pred2 = model2.predict(X_test_2)
+        y_proba2 = model2.predict_proba(X_test_2)[:, 1]
+
+        # Evaluation Metrics
+        auroc2 = roc_auc_score(y_test, y_proba2)
+        accuracy2 = accuracy_score(y_test, y_pred2)
+        sensitivity2, specificity2 = self.calculate_sensitivity_specificity(y_test, y_pred2)
+
+        evaluation_results = {
+            'Model 1 (All Variables)': {
+                'AUROC': auroc1,
+                'Accuracy': accuracy1,
+                'Sensitivity': sensitivity1,
+                'Specificity': specificity1
+            },
+            'Model 2 (Excluding CRP, Leukocyte counts, Procalcitonin)': {
+                'AUROC': auroc2,
+                'Accuracy': accuracy2,
+                'Sensitivity': sensitivity2,
+                'Specificity': specificity2
+            }
+        }
+
+        evaluation_results
 
 
 

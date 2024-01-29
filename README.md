@@ -1,4 +1,4 @@
-# Empowering Radiologists with GPT-4’s Advanced Data Analysis Extension: A Journey to Uncover Insights in Autonomous Data Analytics
+# Equipping Radiologists with Advanced Data Analysis Extension of GPT-4: A Journey to Uncover Insights in Autonomous Data Analytics
 
 
 Overview
@@ -38,12 +38,12 @@ Our source code is available here.
 ------
 ### In case you use this repository, please cite the original paper:
 
-S. Tayebi Arasteh, R. Siepmann, M. Huppertz, et al. *Empowering Radiologists with GPT-4’s Advanced Data Analysis Extension: A Journey to Uncover Insights in Autonomous Data Analytics*. 2024.
+S. Tayebi Arasteh, R. Siepmann, M. Huppertz, et al. *Equipping Radiologists with Advanced Data Analysis Extension of GPT-4: A Journey to Uncover Insights in Autonomous Data Analytics*. 2024.
 
 ### BibTex
 
     @article {radada_arasteh,
       author = {Tayebi Arasteh, Soroosh and Siepmann, Robert and Huppertz, Marc and Lotfinia, Mahshad and Kuhl, Christiane and Truhn, Daniel and Nebelung, Sven},
-      title = {Empowering Radiologists with GPT-4’s Advanced Data Analysis Extension: A Journey to Uncover Insights in Autonomous Data Analytics},
+      title = {Equipping Radiologists with Advanced Data Analysis Extension of GPT-4: A Journey to Uncover Insights in Autonomous Data Analytics},
       year = {2024},
     }
