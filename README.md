@@ -1,14 +1,6 @@
-# Equipping Radiologists with Advanced Data Analysis Extension of GPT-4: A Journey to Uncover Insights in Autonomous Data Analytics
+# The Treasure Trove Hidden in Plain Sight: The Utility of GPT-4 in Chest Radiograph Evaluation
 
 
-Overview
-------
-
-* This is the official repository of the paper [**TODO**](TODO).
-
-Abstract
-------
-TODO
 
 ### Prerequisites
 
@@ -38,12 +30,12 @@ Our source code is available here.
 ------
 ### In case you use this repository, please cite the original paper:
 
-S. Tayebi Arasteh, R. Siepmann, M. Huppertz, et al. *Equipping Radiologists with Advanced Data Analysis Extension of GPT-4: A Journey to Uncover Insights in Autonomous Data Analytics*. 2024.
+S. Tayebi Arasteh, R. Siepmann, M. Huppertz, et al. *The Treasure Trove Hidden in Plain Sight: The Utility of GPT-4 in Chest Radiograph Evaluation*. 2024.
 
 ### BibTex
 
     @article {radada_arasteh,
-      author = {Tayebi Arasteh, Soroosh and Siepmann, Robert and Huppertz, Marc and Lotfinia, Mahshad and Kuhl, Christiane and Truhn, Daniel and Nebelung, Sven},
-      title = {Equipping Radiologists with Advanced Data Analysis Extension of GPT-4: A Journey to Uncover Insights in Autonomous Data Analytics},
+      author = {Tayebi Arasteh, Soroosh and Siepmann, Robert and Huppertz, Marc and Lotfinia, Mahshad and Puladi, Behrus and Kuhl, Christiane and Truhn, Daniel and Nebelung, Sven},
+      title = {The Treasure Trove Hidden in Plain Sight: The Utility of GPT-4 in Chest Radiograph Evaluation},
       year = {2024},
     }

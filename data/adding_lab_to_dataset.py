@@ -11,10 +11,9 @@ from datetime import datetime, timedelta
 from tqdm import tqdm
 import pdb
 
-# Load the datasets
 
-original_uka_df = pd.read_csv('/original_UKA_master_list.csv')
-radiologie_truhn_df = pd.read_csv('/Radiologie_Truhn_Laborwerte.csv')
+original_uka_df = pd.read_csv('/master_list.csv')
+radiologie_truhn_df = pd.read_csv('/Laborwerte.csv')
 updated_file_path = '/finallll.csv'
 
 
